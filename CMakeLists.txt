@@ -12,7 +12,7 @@ project(bingostarr_atm)
 set(LIBRARY_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/lib")
 
 # Add project executable
-add_executable(bingostarr_atm src/main.cpp)
+add_executable(bingostarr_atm src/BingostarrAtm.cpp src/AtmController.cpp src/AtmCard.cpp src/BankProxy.cpp)
 
 target_link_libraries(bingostarr_atm PUBLIC pthread)
 target_include_directories(bingostarr_atm PRIVATE inc)

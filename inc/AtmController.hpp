@@ -9,35 +9,65 @@
 #define INC_ATMCONTROLLER_HPP_
 
 #include <string>
-
-#include "defines.hpp"
+#include <map>
+#include "BankProxy.hpp"
+#include "AtmCard.hpp"
 
 namespace bingostarr {
 namespace base {
 
+enum class ATMSTATE {
+    SLEEP,
+    READY,
+    CARDED,
+    BUSY,
+    OFFLINE,
+    SERVICE,
+    ERROR
+};
+
 class AtmController {
 public:
+    enum class ATMERROR {
+        NO_ERROR,
+        CARD_ERROR,
+        AUTH_ERROR,
+        BANK_ERROR,
+        CASH_ERROR,
+        SYSTEM_ERROR,
+        MAX_ERROR
+    };
     static AtmController& getInstance() {
         static AtmController inst;
         return inst;
     }
     ~AtmController();
-    ATMERROR insertCard(const uint64_t& cardNumber,
-                        const std::string& cardPin);
-    ATMERROR removeCard();
-    ATMERROR quickBalanceOnly(const uint64_t& cardNumber,
-                              const std::string& cardPin,
+    void initialize();
+    void close();
+    ATMERROR insertCard(AtmCard* card);
+    ATMERROR removeCard(AtmCard* card);
+    ATMERROR quickBalanceOnly(AtmCard* card,
                               int64_t& balance);
-    int64_t getBalance();
-    ATMERROR withdraw(const uint64_t& amount,
+    ATMERROR getBalance(AtmCard* card,
+                        int64_t& balance);
+    ATMERROR withdraw(AtmCard* card,
+                      const uint64_t& amount,
                       int64_t& balance);
-    ATMERROR deposit(const uint64_t& amount,
+    ATMERROR deposit(AtmCard* card,
+                     const uint64_t& amount,
                      int64_t& balance);
+    std::string show();
 private:
     AtmController();
     AtmController(const AtmController&) = delete;
     AtmController& operator=(const AtmController&) = delete;
-    ATMSTATE m_atmState;
+    ATMSTATE m_state;
+    AtmCard* m_card;
+    bool checkCard(AtmCard* card);
+    void killCard();
+    ATMERROR insertCardInt(AtmCard* card,
+                           int64_t& balance);
+    bool validate(int64_t& balance);
 };
 
 } /* base */
