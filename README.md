@@ -53,7 +53,7 @@ install v3.0 or greater.
 5. Run it: `./bingostarr_atm`.
 6. Follow the on-screen prompts to take various following actions:
   * _x_  - exit
-  * _i_  - insert card
+  * _i_  - insert card (please refer to [this file](/data/AccountDb.txt) to pick an existing account)
   * _r_  - remove card
   * _w_  - withdraw
   * _d_  - deposit
