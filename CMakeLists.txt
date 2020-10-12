@@ -8,11 +8,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
 project(bingostarr_atm)
 
-# Set library output path to /lib
-set(LIBRARY_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/lib")
-
 # Add project executable
 add_executable(bingostarr_atm src/BingostarrAtm.cpp src/AtmController.cpp src/AtmCard.cpp src/BankProxy.cpp)
-
-target_link_libraries(bingostarr_atm PUBLIC pthread)
 target_include_directories(bingostarr_atm PRIVATE inc)

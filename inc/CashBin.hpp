@@ -30,12 +30,24 @@ public:
         return m_balance;
     }
 
-    void initialize() {
+    bool initialize() {
         m_balance = START_CASH_ATM;
+        return true;
     }
 
-    void close() {
+    bool close() {
         m_balance = MIN_CASH_ATM;
+        return true;
+    }
+
+    const bool available(const int64_t& amount) {
+        if ((m_balance - amount) < MIN_CASH_ATM) return false;
+        return true;
+    }
+
+    const bool depositAllowed(const int64_t& amount) {
+        if ((m_balance + amount) > MAX_CASH_ATM) return false;
+        return true;
     }
 
     const bool withdraw(const int64_t& amount) {
@@ -51,7 +63,7 @@ public:
     }
 
     std::string show() {
-        return "\nCash Bin Balance: $" + std::to_string(m_balance) + "\n";
+        return "Cash Bin Balance: " + std::to_string(m_balance) + "\n";
     }
 private:
     CashBin() = default;

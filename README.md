@@ -29,6 +29,7 @@ You can simplify some complex real world problems if you think it's not worth il
 #### Code Directory Structure
 * */inc* - C++ header files (**.hpp*)
 * */src* - C++ source files (**.cpp*)
+* */data* - account database file (**.txt*)
 
 ## Dependencies for Running Locally
 * cmake >= 3.11
@@ -48,4 +49,13 @@ install v3.0 or greater.
 1. Clone this repo.
 2. Make a build directory in the top level directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
-4. Run it: `./bingostarr_atm`.
+4. Copy data into build folder: `cp ../data/accountsDb.txt .`
+5. Run it: `./bingostarr_atm`.
+6. Follow the on-screen prompts to take various following actions:
+  * _x_  - exit
+  * _i_  - insert card
+  * _r_  - remove card
+  * _w_  - withdraw
+  * _d_  - deposit
+  * _b_  - balance
+

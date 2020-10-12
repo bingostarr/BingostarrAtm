@@ -42,19 +42,19 @@ public:
         return inst;
     }
     ~AtmController();
-    void initialize();
-    void close();
+    bool initialize();
+    bool close();
     ATMERROR insertCard(AtmCard* card);
     ATMERROR removeCard(AtmCard* card);
-    ATMERROR quickBalanceOnly(AtmCard* card,
-                              int64_t& balance);
+    ATMERROR quickBalance(AtmCard* card,
+                          int64_t& balance);
     ATMERROR getBalance(AtmCard* card,
                         int64_t& balance);
     ATMERROR withdraw(AtmCard* card,
-                      const uint64_t& amount,
+                      const int64_t& amount,
                       int64_t& balance);
     ATMERROR deposit(AtmCard* card,
-                     const uint64_t& amount,
+                     const int64_t& amount,
                      int64_t& balance);
     std::string show();
 private:

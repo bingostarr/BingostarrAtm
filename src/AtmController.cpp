@@ -39,23 +39,31 @@ void AtmController::killCard() {
     }
 }
 
-void AtmController::initialize() {
+bool AtmController::initialize() {
     m_state = ATMSTATE::BUSY;
-    BankProxy::getInstance().initialize();
-    CashBin::getInstance().initialize();
     killCard();
+    if (!BankProxy::getInstance().initialize()) {
+        m_state = ATMSTATE::OFFLINE;
+        return false;
+    }
+    if (!CashBin::getInstance().initialize()) {
+        m_state = ATMSTATE::ERROR;
+        return false;
+    }
     m_state = ATMSTATE::READY;
+    return true;
 }
 
-void AtmController::close() {
+bool AtmController::close() {
     if (ATMSTATE::CARDED == m_state) {
         removeCard(m_card);
     }
     m_state = ATMSTATE::BUSY;
     killCard();
-    CashBin::getInstance().close();
-    BankProxy::getInstance().close();
+    bool result = CashBin::getInstance().close();
+    result = result && BankProxy::getInstance().close();
     m_state = ATMSTATE::SLEEP;
+    return result;
 }
 
 AtmController::ATMERROR AtmController::insertCard(AtmCard *card) {
@@ -98,8 +106,8 @@ bool AtmController::checkCard(AtmCard* card) {
     return true;
 }
 
-AtmController::ATMERROR AtmController::quickBalanceOnly(AtmCard* card,
-                                                        int64_t& balance) {
+AtmController::ATMERROR AtmController::quickBalance(AtmCard* card,
+                                                    int64_t& balance) {
     int64_t b = 0;
     ATMERROR err = insertCardInt(card, b);
     if (ATMERROR::NO_ERROR == err) {
@@ -124,7 +132,7 @@ AtmController::ATMERROR AtmController::getBalance(AtmCard* card,
             return ATMERROR::AUTH_ERROR;
         }
         balance = b;
-        m_state = ATMSTATE::READY;
+        m_state = ATMSTATE::CARDED;
         return ATMERROR::NO_ERROR;
     }
     case ATMSTATE::OFFLINE:
@@ -137,7 +145,7 @@ AtmController::ATMERROR AtmController::getBalance(AtmCard* card,
 }
 
 AtmController::ATMERROR AtmController::withdraw(AtmCard* card,
-                                                const uint64_t& amount,
+                                                const int64_t& amount,
                                                 int64_t& balance) {
     switch (m_state) {
     case ATMSTATE::CARDED: {
@@ -146,7 +154,11 @@ AtmController::ATMERROR AtmController::withdraw(AtmCard* card,
             m_state = ATMSTATE::CARDED;
             return ATMERROR::CARD_ERROR;
         }
-        if (!CashBin::getInstance().withdraw(amount)) {
+        if (amount < 0) {
+            m_state = ATMSTATE::CARDED;
+            return ATMERROR::CASH_ERROR;
+        }
+        if (!CashBin::getInstance().available(amount)) {
             m_state = ATMSTATE::CARDED;
             return ATMERROR::CASH_ERROR;
         }
@@ -156,6 +168,9 @@ AtmController::ATMERROR AtmController::withdraw(AtmCard* card,
                                                   balance);
         m_state = ATMSTATE::CARDED;
         ATMERROR err = ErrorMap[acErr];
+        if (ATMERROR::NO_ERROR == err) {
+            CashBin::getInstance().withdraw(amount);
+        }
         return err;
     }
     case ATMSTATE::OFFLINE:
@@ -168,7 +183,7 @@ AtmController::ATMERROR AtmController::withdraw(AtmCard* card,
 }
 
 AtmController::ATMERROR AtmController::deposit(AtmCard* card,
-                                               const uint64_t& amount,
+                                               const int64_t& amount,
                                                int64_t& balance) {
     switch (m_state) {
     case ATMSTATE::CARDED: {
@@ -177,7 +192,11 @@ AtmController::ATMERROR AtmController::deposit(AtmCard* card,
             m_state = ATMSTATE::CARDED;
             return ATMERROR::CARD_ERROR;
         }
-        if (!CashBin::getInstance().deposit(amount)) {
+        if (amount < 0) {
+            m_state = ATMSTATE::CARDED;
+            return ATMERROR::CASH_ERROR;
+        }
+        if (!CashBin::getInstance().depositAllowed(amount)) {
             m_state = ATMSTATE::CARDED;
             return ATMERROR::CASH_ERROR;
         }
@@ -187,6 +206,9 @@ AtmController::ATMERROR AtmController::deposit(AtmCard* card,
                                                  balance);
         m_state = ATMSTATE::CARDED;
         ATMERROR err = ErrorMap[acErr];
+        if (ATMERROR::NO_ERROR == err) {
+            CashBin::getInstance().deposit(amount);
+        }
         return err;
     }
     case ATMSTATE::OFFLINE:
@@ -232,7 +254,9 @@ bool AtmController::validate(int64_t& balance) {
 }
 
 std::string AtmController::show() {
-    std::string outStr = "====" + BankProxy::getInstance().show() + CashBin::getInstance().show();
+    std::string outStr = "====" +
+                         BankProxy::getInstance().show() +
+                         CashBin::getInstance().show();
     switch (m_state) {
     case ATMSTATE::SLEEP:
         outStr += "ATM: SLEEP\n";
@@ -241,12 +265,12 @@ std::string AtmController::show() {
         outStr += "ATM: READY\n";
         break;
     case ATMSTATE::CARDED: {
-        outStr += "ATM: CARDED\n";
+        outStr += "ATM: CARDED\nCARD: ";
         if (m_card) {
             outStr += m_card->show();
             int64_t b = 0;
             if (validate(b)) {
-                outStr += "Balance: $" + std::to_string(b);
+                outStr += " : " + std::to_string(b) + "\n";
             } else {
                 outStr += "!!card declined!!\n";
             }
@@ -268,6 +292,7 @@ std::string AtmController::show() {
         outStr += "ATM: ERROR\n";
         break;
     }
+//    outStr += BankProxy::getInstance().showAccounts();
     return outStr;
 }
 } /* base */
